@@ -120,6 +120,7 @@ RUN \
     && mkdir -p /var/lib/nginx \
     # forward request and error logs to docker log collector
     && mkdir -p /var/log/nginx \
+    && mkdir -p /var/lib/nginx/body \
     && touch /var/log/nginx/access.log /var/log/nginx/error.log \
     && chown nginx: /var/log/nginx/access.log /var/log/nginx/error.log \
     && ln -sf /dev/stdout /var/log/nginx/access.log \
