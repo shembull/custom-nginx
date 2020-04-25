@@ -128,6 +128,9 @@ RUN \
 
 STOPSIGNAL SIGTERM
 
+EXPOSE 80/tcp
+EXPOSE 443/tcp
+
 ENTRYPOINT ["/usr/sbin/nginx"]
 
 CMD ["-g", "daemon off;"]
