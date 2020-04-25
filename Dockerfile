@@ -6,8 +6,8 @@ RUN adduser -S nginx \
 ENV PCRE_V=8.44
 ENV ZLIB_V=1.2.11
 ENV ZLIB_D=1211
-ENV OPENSSL_V=1.1.1f
-ENV NGINX_V=1.17.9
+ENV OPENSSL_V=1.1.1g
+ENV NGINX_V=1.17.10
 
 # Build custom nginx server
 RUN set -x \
