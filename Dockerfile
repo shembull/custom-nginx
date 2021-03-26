@@ -1,4 +1,4 @@
-FROM alpine:edge AS builder
+FROM alpine:latest AS builder
 
 RUN adduser -S nginx \
     && addgroup -S nginx
