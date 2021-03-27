@@ -7,38 +7,42 @@ ENV PCRE_V=8.44
 ENV ZLIB_V=1.2.11
 ENV ZLIB_D=1211
 ENV OPENSSL_V=1.1.1k
-ENV NGINX_V=1.19.8
+ENV NGINX_V=1.19.6
 
 # Build custom nginx server
 RUN set -x \
     && apk update \
+    && apk -U upgrade \
     && apk add curl tar git \
     && mkdir /build \
     && cd /build \
     && curl https://ftp.pcre.org/pub/pcre/pcre-$(echo $PCRE_V).zip -o pcre.zip \
     && curl https://www.zlib.net/zlib$(echo $ZLIB_D).zip -o zlib.zip \
-    && curl https://www.openssl.org/source/openssl-$(echo $OPENSSL_V).tar.gz -o openssl.tar.gz \
     && unzip pcre.zip \
     && unzip zlib.zip \
-    && tar -xzf openssl.tar.gz \
-    && rm pcre.zip zlib.zip openssl.tar.gz \
+    && rm pcre.zip zlib.zip \
     && git clone https://github.com/stnoonan/spnego-http-auth-nginx-module.git \
+    && git clone --recursive https://github.com/cloudflare/quiche \
+    && curl https://nginx.org/download/nginx-$(echo $NGINX_V).tar.gz -o nginx.tar.gz \
+    && tar -zxf nginx.tar.gz \
+    && rm nginx.tar.gz \
+    && curl https://sh.rustup.rs -sSf | sh -s -- -y -q \
     && git clone https://github.com/google/ngx_brotli.git \
     && cd ngx_brotli \
     && git submodule update --init \
     && apk del --purge curl tar git
 
 RUN set -x \
+    && export PATH="$HOME/.cargo/bin:$PATH" \
     && apk update \
-    && apk add curl tar make g++ krb5-dev linux-headers perl automake autoconf \
+    && apk -U upgrade \
+    && apk add alpine-sdk curl tar make cmake g++ krb5-dev linux-headers perl automake autoconf \
     && cd /build \
-    && curl https://nginx.org/download/nginx-$(echo $NGINX_V).tar.gz -o nginx.tar.gz \
-    && tar -zxf nginx.tar.gz \
-    && rm nginx.tar.gz \
     && cd nginx-$(echo $NGINX_V)/ \
     && sed -i 's/static u_char ngx_http_server_string\[\] = "Server: nginx" CRLF/static u_char ngx_http_server_string\[\] = "Server: BonsaiWeb" CRLF/g' src/http/ngx_http_header_filter_module.c \
     && sed -i 's/static u_char ngx_http_server_full_string\[\] = "Server: " NGINX_VER CRLF/static u_char ngx_http_server_full_string\[\] = "Server: BonsaiWeb" CRLF/g' src/http/ngx_http_header_filter_module.c \
     && sed -i 's/static u_char ngx_http_server_build_string\[\] = "Server: " NGINX_VER_BUILD CRLF/static u_char ngx_http_server_build_string\[\] = "Server: BonsaiWeb" CRLF/g' src/http/ngx_http_header_filter_module.c \
+    && patch -p01 < ../quiche/extras/nginx/nginx-1.16.patch \
     && ./configure --prefix=/usr/share/nginx \
         --sbin-path=/usr/sbin/nginx \
         --modules-path=/usr/lib/nginx/modules \
@@ -55,11 +59,11 @@ RUN set -x \
         --http-proxy-temp-path=/var/lib/nginx/proxy \
         --http-scgi-temp-path=/var/lib/nginx/scgi \
         --http-uwsgi-temp-path=/var/lib/nginx/uwsgi \
-        --with-openssl=../openssl-$(echo $OPENSSL_V) \
-        --with-openssl-opt=enable-ec_nistp_64_gcc_128 \
-        --with-openssl-opt=no-nextprotoneg \
-        --with-openssl-opt=no-weak-ssl-ciphers \
-        --with-openssl-opt=no-ssl3 \
+#        --with-openssl=../openssl-$(echo $OPENSSL_V) \
+#        --with-openssl-opt=enable-ec_nistp_64_gcc_128 \
+#        --with-openssl-opt=no-nextprotoneg \
+#        --with-openssl-opt=no-weak-ssl-ciphers \
+#        --with-openssl-opt=no-ssl3 \
         --with-pcre=../pcre-$(echo $PCRE_V) \
         --with-pcre-jit \
         --with-zlib=../zlib-$(echo $ZLIB_V) \
@@ -88,10 +92,14 @@ RUN set -x \
         --with-stream_ssl_module \
         --with-stream_ssl_preread_module \
         --with-debug \
+        --with-http_v3_module 	\
+        --with-openssl=../quiche/deps/boringssl \
+        --build="quiche-$(git --git-dir=../quiche/.git rev-parse --short HEAD)" \
+        --with-quiche=../quiche \
         --add-module=../spnego-http-auth-nginx-module \
         --add-module=../ngx_brotli \
-        --with-cc-opt='-g -O2 -fPIE -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2' \
-        --with-ld-opt='-Wl,-Bsymbolic-functions -fPIE -pie -Wl,-z,relro -Wl,-z,now' \
+#        --with-cc-opt='-g -O2 -fPIE -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2' \
+#        --with-ld-opt='-Wl,-Bsymbolic-functions -fPIE -pie -Wl,-z,relro -Wl,-z,now' \
     && make \
     && make install \
     && mkdir -p /var/lib/nginx \
