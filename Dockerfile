@@ -92,7 +92,7 @@ RUN set -x \
         --with-stream_ssl_module \
         --with-stream_ssl_preread_module \
         --with-debug \
-        --with-http_v3_module 	\
+        --with-http_v3_module \
         --with-openssl=../quiche/deps/boringssl \
         --build="quiche-$(git --git-dir=../quiche/.git rev-parse --short HEAD)" \
         --with-quiche=../quiche \
