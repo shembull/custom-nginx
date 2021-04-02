@@ -7,7 +7,7 @@ ENV PCRE_V=8.44
 ENV ZLIB_V=1.2.11
 ENV ZLIB_D=1211
 ENV OPENSSL_V=1.1.1k
-ENV NGINX_V=1.19.8
+ENV NGINX_V=1.19.9
 
 # Build custom nginx server
 RUN set -x \
