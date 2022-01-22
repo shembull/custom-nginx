@@ -3,7 +3,7 @@ FROM alpine:latest AS builder
 RUN adduser -S nginx \
     && addgroup -S nginx
 
-ENV PCRE_V=8.44
+ENV PCRE_V=8.45
 ENV ZLIB_V=1.2.11
 ENV ZLIB_D=1211
 ENV OPENSSL_V=1.1.1k
@@ -15,7 +15,7 @@ RUN set -x \
     && apk add curl tar git \
     && mkdir /build \
     && cd /build \
-    && curl https://ftp.pcre.org/pub/pcre/pcre-$(echo $PCRE_V).zip -o pcre.zip \
+    && curl https://deac-ams.dl.sourceforge.net/project/pcre/pcre/8.45/pcre-8.45.zip -o pcre.zip \
     && curl https://www.zlib.net/zlib$(echo $ZLIB_D).zip -o zlib.zip \
     && curl https://www.openssl.org/source/openssl-$(echo $OPENSSL_V).tar.gz -o openssl.tar.gz \
     && unzip pcre.zip \
