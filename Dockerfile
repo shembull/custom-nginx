@@ -3,11 +3,11 @@ FROM alpine:latest AS builder
 RUN adduser -S nginx \
     && addgroup -S nginx
 
-ENV PCRE_V=8.45
-ENV ZLIB_V=1.2.11
-ENV ZLIB_D=1211
-ENV OPENSSL_V=1.1.1k
-ENV NGINX_V=1.21.5
+ENV PCRE_V=10.40
+ENV ZLIB_V=1.2.12
+ENV ZLIB_D=1212
+ENV OPENSSL_V=1.1.1o
+ENV NGINX_V=1.21.6
 
 # Build custom nginx server
 RUN set -x \
@@ -15,13 +15,13 @@ RUN set -x \
     && apk add curl tar git \
     && mkdir /build \
     && cd /build \
-    && curl https://deac-ams.dl.sourceforge.net/project/pcre/pcre/8.45/pcre-8.45.zip -o pcre.zip \
-    && curl https://www.zlib.net/zlib$(echo $ZLIB_D).zip -o zlib.zip \
-    && curl https://www.openssl.org/source/openssl-$(echo $OPENSSL_V).tar.gz -o openssl.tar.gz \
-    && unzip pcre.zip \
+    && curl -L https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$(echo $PCRE_V)/pcre2-$(echo $PCRE_V).tar.gz -o pcre.tar.gz \
+    && curl -L https://www.zlib.net/zlib$(echo $ZLIB_D).zip -o zlib.zip \
+    && curl -L https://www.openssl.org/source/openssl-$(echo $OPENSSL_V).tar.gz -o openssl.tar.gz \
+    && tar -xzf pcre.tar.gz \
     && unzip zlib.zip \
     && tar -xzf openssl.tar.gz \
-    && rm pcre.zip zlib.zip openssl.tar.gz \
+    && rm pcre.tar.gz zlib.zip openssl.tar.gz \
     && git clone https://github.com/stnoonan/spnego-http-auth-nginx-module.git \
     && git clone https://github.com/google/ngx_brotli.git \
     && cd ngx_brotli \
@@ -32,7 +32,7 @@ RUN set -x \
     && apk update \
     && apk add curl tar make g++ krb5-dev linux-headers perl automake autoconf \
     && cd /build \
-    && curl https://nginx.org/download/nginx-$(echo $NGINX_V).tar.gz -o nginx.tar.gz \
+    && curl -L https://nginx.org/download/nginx-$(echo $NGINX_V).tar.gz -o nginx.tar.gz \
     && tar -zxf nginx.tar.gz \
     && rm nginx.tar.gz \
     && cd nginx-$(echo $NGINX_V)/ \
@@ -60,7 +60,7 @@ RUN set -x \
         --with-openssl-opt=no-nextprotoneg \
         --with-openssl-opt=no-weak-ssl-ciphers \
         --with-openssl-opt=no-ssl3 \
-        --with-pcre=../pcre-$(echo $PCRE_V) \
+        --with-pcre=../pcre2-$(echo $PCRE_V) \
         --with-pcre-jit \
         --with-zlib=../zlib-$(echo $ZLIB_V) \
         --with-compat \
