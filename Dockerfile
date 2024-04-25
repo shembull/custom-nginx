@@ -3,11 +3,11 @@ FROM alpine:latest AS builder
 RUN adduser -S nginx \
     && addgroup -S nginx
 
-ENV PCRE_V=10.42
-ENV ZLIB_V=1.2.13
-ENV ZLIB_D=1213
-ENV OPENSSL_V=3.0.7
-ENV NGINX_V=1.25.2
+ENV PCRE_V=10.43
+ENV ZLIB_V=1.3.1
+ENV ZLIB_D=131
+ENV OPENSSL_V=3.3.0
+ENV NGINX_V=1.25.5
 
 # Build custom nginx server
 RUN set -x \
@@ -23,22 +23,27 @@ RUN set -x \
     && tar -xzf openssl.tar.gz \
     && rm pcre.tar.gz zlib.zip openssl.tar.gz \
     && git clone https://github.com/stnoonan/spnego-http-auth-nginx-module.git \
-    && git clone https://github.com/google/ngx_brotli.git \
-    && cd ngx_brotli \
-    && git submodule update --init \
+    && git clone --recurse-submodules https://github.com/google/ngx_brotli \
     && apk del --purge curl tar git
 
 RUN set -x \
     && apk update \
-    && apk add curl tar make g++ krb5-dev linux-headers perl automake autoconf \
+    && apk add curl tar make cmake g++ krb5-dev linux-headers perl automake autoconf \
     && cd /build \
     && curl -L https://nginx.org/download/nginx-$(echo $NGINX_V).tar.gz -o nginx.tar.gz \
     && tar -zxf nginx.tar.gz \
     && rm nginx.tar.gz \
+    && cd ngx_brotli/deps/brotli \
+    && mkdir out && cd out \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_CXX_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_INSTALL_PREFIX=./installed .. \
+    && cmake --build . --config Release --target brotlienc \
+    && cd ../../../.. \
     && cd nginx-$(echo $NGINX_V)/ \
     && sed -i 's/static u_char ngx_http_server_string\[\] = "Server: nginx" CRLF/static u_char ngx_http_server_string\[\] = "Server: BonsaiWeb" CRLF/g' src/http/ngx_http_header_filter_module.c \
     && sed -i 's/static u_char ngx_http_server_full_string\[\] = "Server: " NGINX_VER CRLF/static u_char ngx_http_server_full_string\[\] = "Server: BonsaiWeb" CRLF/g' src/http/ngx_http_header_filter_module.c \
     && sed -i 's/static u_char ngx_http_server_build_string\[\] = "Server: " NGINX_VER_BUILD CRLF/static u_char ngx_http_server_build_string\[\] = "Server: BonsaiWeb" CRLF/g' src/http/ngx_http_header_filter_module.c \
+    && export CFLAGS="-m64 -march=native -mtune=native -Ofast -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+    && export LDFLAGS="-m64 -Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections" \
     && ./configure --prefix=/usr/share/nginx \
         --sbin-path=/usr/sbin/nginx \
         --modules-path=/usr/lib/nginx/modules \
@@ -90,7 +95,7 @@ RUN set -x \
         --with-debug \
         --add-module=../spnego-http-auth-nginx-module \
         --add-module=../ngx_brotli \
-        --with-cc-opt='-g -O2 -fPIE -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2' \
+        --with-cc-opt='-g -O2 -fPIC -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2' \
         --with-ld-opt='-Wl,-Bsymbolic-functions -fPIE -pie -Wl,-z,relro -Wl,-z,now' \
     && make \
     && make install \
