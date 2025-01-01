@@ -95,7 +95,7 @@ RUN set -x \
         --with-debug \
         --add-module=../spnego-http-auth-nginx-module \
         --add-module=../ngx_brotli \
-        --with-cc-opt='-g -O2 -fPIC -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2' \
+        --with-cc-opt='-g -flto=auto -O2 -fPIC -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2' \
         --with-ld-opt='-Wl,-Bsymbolic-functions -fPIE -pie -Wl,-z,relro -Wl,-z,now' \
     && make \
     && make install \
