@@ -3,11 +3,11 @@ FROM alpine:latest AS builder
 RUN adduser -S nginx \
     && addgroup -S nginx
 
-ENV PCRE_V=10.43
+ENV PCRE_V=10.44
 ENV ZLIB_V=1.3.1
 ENV ZLIB_D=131
-ENV OPENSSL_V=3.3.0
-ENV NGINX_V=1.25.5
+ENV OPENSSL_V=3.4.0
+ENV NGINX_V=1.27.3
 
 # Build custom nginx server
 RUN set -x \
