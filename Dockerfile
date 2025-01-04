@@ -23,7 +23,7 @@ RUN set -x \
     && tar -xzf openssl.tar.gz \
     && rm pcre.tar.gz zlib.zip openssl.tar.gz \
     && git clone https://github.com/stnoonan/spnego-http-auth-nginx-module.git \
-    && git clone --recurse-submodules https://github.com/google/ngx_brotli \
+    && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
     && apk del --purge curl tar git
 
 RUN set -x \
